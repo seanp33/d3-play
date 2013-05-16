@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <style type="text/css">
+
+    svg {
+        border: solid 1px #aaa;
+    }
+
+    .line {
+        fill: none;
+        stroke: black;
+        stroke-dasharray: 6;
+        stroke-width: 1.5px;
+    }
+
+    </style>
+  </head>
+  <body onload="start()">
+    <script type="text/javascript" src="d3.v3.js"></script>
+    <script type="text/javascript">
+
+        var width = 960, height = 500, radius = 20;
+        var centerX = width / 2;
+        var centerY = height / 2;
+
+        var vis = d3.select("body").append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+        var x = d3.scale.linear()
+                .domain([0, 1])
+                .range([0, width]);
+
+        var y = d3.scale.linear()
+                .domain([0, 1])
+                .range([height, 0]);
+
+        var line = d3.svg.line()
+                .x(function (d) {
+                    return d.childNodes[0].getAttribute('cx');
+                })
+                .y(function (d) {
+                    return d.childNodes[0].getAttribute('cy');
+                });
+
+        var blobLine = d3.svg.line()
+                .x(function (d) {
+                    return d.x;
+                })
+                .y(function (d) {
+                    return d.y;
+                })
+                .interpolate("cardinal");
+
+        vis.append("svg:defs").selectAll("marker")
+                .data(["arrow"])
+                .enter().append("svg:marker")
+                .attr("id", String)
+                .attr("viewBox", "0 -5 10 10")
+                .attr("refX", 5)
+                .attr("markerWidth", 6)
+                .attr("markerHeight", 6)
+                .attr("orient", "auto")
+                .append("svg:path")
+                .attr("d", "M0,-5L10,0L0,5");
+
+        var nodes = [];
+        var colors = ['red', 'green', 'orange', 'brown', 'pink', 'purple', 'yellow'];
+
+        function arc(d) {
+            var dx = d.target.x - d.source.x,
+                    dy = d.target.y - d.source.y,
+                    dr = Math.sqrt(dx * dx + dy * dy);
+            return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+        }
+
+        function start() {
+            console.log('started');
+            generate();
+            paint();
+        }
+
+        function generate() {
+            var count = rr(3, colors.length);
+            nodes = [];
+            for (var i = 0; i < count; i++) {
+                nodes.push({id: colors[rr(0, colors.length - 1)]});
+            }
+        }
+
+        function paint() {
+
+            var group = vis.selectAll(".nodeGroup")
+                    .data(nodes, function (d) {
+                        return d.id
+                    })
+                    .enter()
+                    .append('g')
+                    .attr("class", "nodeGroup")
+                    .attr("x", function (d) {
+                        return rr(radius, width);
+                    })
+                    .attr("y", function (d) {
+                        return rr(radius, height);
+                    });
+
+
+            var circle = group.append("circle")
+                    .attr("fill", function (d) {
+                        return d.id
+                    })
+                    .attr("class", "circle")
+                    .attr("r", radius)
+                    .attr("cx", function (d) {
+                        return rr(radius, width);
+                    })
+                    .attr("cy", function (d) {
+                        return rr(radius, height);
+                    });
+
+            var circles = vis.selectAll(".circle")[0];
+            var points = [];
+
+            for (var i = 0; i < 2; i++) {
+                var c = circles[i];
+                var cx = parseInt(c.getAttribute('cx'));
+                var cy = parseInt(c.getAttribute('cy'));
+                points.push({x: cx, y: cy});
+            }
+
+            vis.append("path")
+                    .attr("d", function () {
+                        return arc({source: points[0], target: points[1]});
+                    })
+                    .attr("class", "line")
+                    .attr("marker-end", function (d) {
+                        return "url(#arrow)";
+                    });
+
+        }
+
+        function rr(min, max) {
+            return (Math.floor(Math.random() * (max - min + 1)) + min);
+        }
+
+    </script>
+  </body>
+</html>
